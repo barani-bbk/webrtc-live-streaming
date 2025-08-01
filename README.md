@@ -1,36 +1,100 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Live Streaming using webrtc (Next.js + Mediasoup + HLS)
 
-## Getting Started
+A modern frontend for real-time streaming and live viewing, built with Next.js, TypeScript, mediasoup-client, HLS.js, and Socket.IO.
 
-First, run the development server:
+## Project Structure
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+/ # Root
+|-- /app                        # Next.js App Router pages
+| |-- /stream                   # Streaming page: produces video/audio
+| | |-- page.tsx
+| |
+| |-- /watch                    # Watch page: views live HLS playback
+| | |-- page.tsx
+| |
+| |-- layout.tsx                # Shared layout
+| |-- page.tsx                  # Home page (optional)
+|
+|-- /components
+| |-- /ui/                      # UI primitives (buttons, icons, etc.)
+| |-- StreamControls.tsx        # Controls: mute, video toggle, leave
+| |-- PeerVideo.tsx             # Renders WebRTC peers (with mic/video icons)
+| |-- VideoPlayer.tsx           # Generic video component
+|
+|-- /hooks
+| |-- useStream.ts              # Streaming logic: connect, produce, consume
+| |-- useWatch.ts               # Live viewer logic: load HLS playlist
+|
+|-- /lib
+| |-- mediasoup-client.ts       # Setup mediasoup and transports
+| |-- socket.ts                 # Socket.IO client config
+|
+|-- next.config.js
+|-- package.json
+|-- tsconfig.json
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Installation
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+npm install
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+or
 
-## Learn More
+yarn install
+```
 
-To learn more about Next.js, take a look at the following resources:
+🚀 Running locally
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Make sure the backend server (Mediasoup SFU + HLS) is running and the env is setup
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+npm run dev
+```
 
-## Deploy on Vercel
+Open http://localhost:3000 to view in your browser.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## How it works (high level)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Streaming flow (/stream)
+
+- Connect to backend using Socket.IO.
+
+- Request router RTP capabilities.
+
+- Create mediasoup-client device.
+
+- Create WebRTC send & receive transports.
+
+- Capture local video/audio via getUserMedia.
+
+- Produce local video & audio tracks to mediasoup.
+
+- Consume remote peers’ producers → render them in PeerVideo.tsx.
+
+- Toggle mic/video via StreamControls.tsx by pausing/resuming producers.
+
+- Backend forwards each producer as RTP → converts to HLS for playback.
+
+### Watching flow (/watch)
+
+- Request live playlist for a specific peer from backend.
+
+- Use HLS.js (VideoPlayer.tsx) to load & play .m3u8 playlist.
+
+- Video/audio segments are streamed via HLS as they’re produced.
+
+- Player updates automatically as new segments are added.
+
+## Components overview
+
+PeerVideo.tsx – Renders a single peer’s video + overlays for mic/video status.
+
+VideoPlayer.tsx – Plays either WebRTC stream or HLS playlist.
+
+StreamControls.tsx – Buttons to mute, disable video, or leave call.
+
+useStream.ts – Custom React hook: handles mediasoup-client logic, socket events.
+
+useWatch.ts – Loads and monitors HLS playlist for live view.
